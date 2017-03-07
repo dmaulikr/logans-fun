@@ -145,6 +145,7 @@
         hitSize = player.contentSize.width * 0.10;
         x = (player.contentSize.width / 2.0f) - (hitSize / 2.0f);
         y = 0;
+        player.opacity = 0.85;
     }
     else {
         hitSize = player.contentSize.width;
@@ -155,7 +156,6 @@
     player.physicsBody = [CCPhysicsBody bodyWithRect:(CGRect){ccp(x,y), CGSizeMake(hitSize, hitSize)} cornerRadius:0]; // 1
     player.physicsBody.collisionGroup = groupName; // 2
     player.physicsBody.collisionType  = typeName;
-    
     player.physicsBody.allowsRotation = NO;
     
     [_physicsWorld addChild:player];
@@ -202,7 +202,7 @@
 - (void)touchBegan:(UITouch *)touch withEvent:(UIEvent *)event {
     CGPoint touchLocation = [touch locationInNode:self];
 
-    if (CGRectContainsPoint(_playButton.boundingBox, touchLocation)) {
+    if (_playButton != nil && CGRectContainsPoint(_playButton.boundingBox, touchLocation)) {
         [self playButtonClicked:self];
         return;
     }
@@ -266,18 +266,18 @@
         star.scale = 0;
         [self addChild:star];
 
-        CCAction *actionFadeIn = [CCActionFadeTo actionWithDuration:1.5f opacity:1.0];
-        CCAction *actionFadeOut = [CCActionFadeTo actionWithDuration:1.5f opacity:0.0];
+        CCAction *actionFadeIn = [CCActionFadeTo actionWithDuration:1.25f opacity:1.0];
+        CCAction *actionFadeOut = [CCActionFadeTo actionWithDuration:1.25f opacity:0.0];
         [star runAction:[CCActionSequence actionWithArray:@[actionFadeIn, actionFadeOut]]];
-        CCAction *actionScale = [CCActionScaleTo actionWithDuration:3.0f scale:1.5f];
+        CCAction *actionScale = [CCActionScaleTo actionWithDuration:2.5f scale:1.5f];
         [star runAction:actionScale];
 
         _playButton = [CCSprite spriteWithImageNamed:@"button.png"];
         _playButton.position = CGPointMake(self.contentSize.width / 2.0f, self.contentSize.height / 2.0f);
         _playButton.opacity = 0.0f;
         [self addChild:_playButton];
-        CCAction *actionFadeInPlay = [CCActionFadeTo actionWithDuration:0.4f opacity:1.0];
-        [_playButton runAction:[CCActionSequence actionWithArray:@[[CCActionDelay actionWithDuration:3.0f], actionFadeInPlay]]];
+        CCAction *actionFadeInPlay = [CCActionFadeTo actionWithDuration:0.25f opacity:1.0];
+        [_playButton runAction:[CCActionSequence actionWithArray:@[[CCActionDelay actionWithDuration:2.5f], actionFadeInPlay]]];
         
         [_target1 removeFromParent];
         [_target2 removeFromParent];
@@ -288,7 +288,8 @@
 -(void)playButtonClicked:(id)sender {
     
     [_playButton removeFromParent];
-
+    _playButton = nil;
+    
     [self addSources];
     [self addTargets];
     

@@ -1164,7 +1164,7 @@
 					"-lz",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = net.nosleep.LogansFun;
+				PRODUCT_BUNDLE_IDENTIFIER = net.nosleep.logansfun;
 				PRODUCT_NAME = "Logan's Fun";
 				PROVISIONING_PROFILE = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Bridging-Header.h";
@@ -1206,7 +1206,7 @@
 					"-lz",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = net.nosleep.LogansFun;
+				PRODUCT_BUNDLE_IDENTIFIER = net.nosleep.logansfun;
 				PRODUCT_NAME = "Logan's Fun";
 				PROVISIONING_PROFILE = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Bridging-Header.h";
