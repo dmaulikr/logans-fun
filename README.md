@@ -1,2 +1,2 @@
 # logans-fun
-A fun game for little kiddos from 12 to 24 months old
+An iPhone/iPad game for little kiddos from 12 to 24 months old
