@@ -1,7 +1,7 @@
 # logans-fun
 An iPhone/iPad game for little kiddos from 12 to 24 months old
 
-![](https://www.dropbox.com/s/9fyqk8b6fgx7x27/logans_fun_screenshot.jpg?dl=0)
+![](https://dl.dropboxusercontent.com/content_link/Fj5VSe7pbZYmbUl5MwUUFXUGtg36wQrlukc45NoiAvpEjtbvy5uuhinZk1sHUd1D/file)
 
 
 
