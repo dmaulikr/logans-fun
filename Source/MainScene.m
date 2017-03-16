@@ -22,12 +22,12 @@
     self.userInteractionEnabled = YES;
 
     // add some background colors
-    CCNodeColor *topBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.2f green:0.2f blue:0.2f alpha:1.0f]];
+    CCNodeColor *topBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.3f green:0.3f blue:0.3f alpha:1.0f]];
     topBackground.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height / 2.0f);
     topBackground.position = ccp(0, 0);
     [self addChild:topBackground];
     
-    CCNodeColor *bottomBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.3f green:0.3f blue:0.3f alpha:1.0f]];
+    CCNodeColor *bottomBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.4f green:0.4f blue:0.4f alpha:1.0f]];
     bottomBackground.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height / 2.0f);
     bottomBackground.position = ccp(0, self.contentSize.height / 2.0f);
     [self addChild:bottomBackground];
@@ -39,10 +39,11 @@
     _physicsWorld.collisionDelegate = self;
     [self addChild:_physicsWorld];
     
-    // add all the sprites
-    [self addTargets];
-    [self addSources];
+    // add the border
     [self addBorders];
+    
+    // start with the menu
+    [self showMenu:0.5f];
     
     return self;
 }
@@ -85,53 +86,53 @@
 }
 
 - (void)addSources {
-    _source1 = [self addSprite:@"circle.png" groupName:@"source1Group" typeName:@"sourceCollision" isTarget:NO];
-    _source2 = [self addSprite:@"square.png" groupName:@"source2Group" typeName:@"sourceCollision" isTarget:NO];
-    _source3 = [self addSprite:@"triangle.png" groupName:@"source3Group" typeName:@"sourceCollision" isTarget:NO];
     
-    CGFloat spritesWidth = _source1.contentSize.width + _source2.contentSize.width + _source3.contentSize.width;
-    CGFloat spacing = (self.contentSize.width - spritesWidth) / 4.0f;
-    CGFloat fromBottom = self.contentSize.height - ((self.contentSize.height/2.0f) / 2.0f);
+    // create the sprites for our current set of shapes
+    NSMutableArray *sprites = [NSMutableArray new];
+    int index = 1;
+    for (NSString *shapeName in _shapeNames) {
+        NSString *fileName = [NSString stringWithFormat:@"%@.png", shapeName];
+        NSString *groupName = [NSString stringWithFormat:@"source%dGroup", index];
+        [sprites addObject:[self addSprite:fileName groupName:groupName typeName:@"sourceCollision" isTarget:NO]];
+        index += 1;
+    }
+
+    CGFloat y = self.contentSize.height - ((self.contentSize.height/2.0f) / 2.0f);
+    NSMutableArray *positions = [self calculateHorizontalSpritePositions:sprites y:y];
+    [positions shuffle];
     
-    CGPoint posA = ccp(spacing * 1 + _source1.contentSize.width * 0 + _source1.contentSize.width / 2.0f, fromBottom);
-    CGPoint posB = ccp(spacing * 2 + _source1.contentSize.width * 1 + _source1.contentSize.width / 2.0f, fromBottom);
-    CGPoint posC = ccp(spacing * 3 + _source1.contentSize.width * 2 + _source1.contentSize.width / 2.0f, fromBottom);
+    // assign a position to each sprite
+    for(int index = 0; index < sprites.count; index++) {
+        CCSprite *sprite = sprites[index];
+        sprite.position = [positions[index] CGPointValue];
+    }
     
-    NSMutableArray *pos = [NSMutableArray new];
-    [pos addObject:[NSValue valueWithCGPoint:posA]];
-    [pos addObject:[NSValue valueWithCGPoint:posB]];
-    [pos addObject:[NSValue valueWithCGPoint:posC]];
-    
-    [pos shuffle];
-    
-    _source1.position  = [[pos objectAtIndex:0] CGPointValue];
-    _source2.position  = [[pos objectAtIndex:1] CGPointValue];
-    _source3.position  = [[pos objectAtIndex:2] CGPointValue];
+    _sourceSprites = sprites;
 }
 
 - (void)addTargets {
-    _target1 = [self addSprite:@"circle-hole.png" groupName:@"sink1Group" typeName:@"sinkCollision" isTarget:YES];
-    _target2 = [self addSprite:@"square-hole.png" groupName:@"sink2Group" typeName:@"sinkCollision" isTarget:YES];
-    _target3 = [self addSprite:@"triangle-hole.png" groupName:@"sink3Group" typeName:@"sinkCollision" isTarget:YES];
     
-    CGFloat spritesWidth = _target1.contentSize.width + _target1.contentSize.width + _target1.contentSize.width;
-    CGFloat spacing = (self.contentSize.width - spritesWidth) / 4.0f;
-    CGFloat fromBottom = (self.contentSize.height/2.0f) / 2.0f;
+    // create the sprites for our current set of shapes
+    NSMutableArray *sprites = [NSMutableArray new];
+    int index = 1;
+    for (NSString *shapeName in _shapeNames) {
+        NSString *fileName = [NSString stringWithFormat:@"%@-hole.png", shapeName];
+        NSString *groupName = [NSString stringWithFormat:@"sink%dGroup", index];
+        [sprites addObject:[self addSprite:fileName groupName:groupName typeName:@"sinkCollision" isTarget:YES]];
+        index += 1;
+    }
     
-    CGPoint posA= ccp(spacing * 1 + _target1.contentSize.width * 0 + _target1.contentSize.width / 2.0f, fromBottom);
-    CGPoint posB =ccp(spacing * 2 + _target1.contentSize.width * 1 + _target1.contentSize.width / 2.0f, fromBottom);
-    CGPoint posC  = ccp(spacing * 3 + _target1.contentSize.width * 2 + _target1.contentSize.width / 2.0f, fromBottom);
+    CGFloat y = (self.contentSize.height/2.0f) / 2.0f;
+    NSMutableArray *positions = [self calculateHorizontalSpritePositions:sprites y:y];
+    [positions shuffle];
+    
+    // assign a position to each sprite
+    for(int index = 0; index < sprites.count; index++) {
+        CCSprite *sprite = sprites[index];
+        sprite.position = [positions[index] CGPointValue];
+    }
 
-    NSMutableArray *pos = [NSMutableArray new];
-    [pos addObject:[NSValue valueWithCGPoint:posA]];
-    [pos addObject:[NSValue valueWithCGPoint:posB]];
-    [pos addObject:[NSValue valueWithCGPoint:posC]];
-    
-    [pos shuffle];
-
-    _target1.position =[[pos objectAtIndex:0] CGPointValue];
-    _target2.position  =[[pos objectAtIndex:1] CGPointValue];
-    _target3.position =[[pos objectAtIndex:2] CGPointValue];
+    _targetSprites = sprites;
 }
 
 - (CCSprite *)addSprite:(NSString *)imageName groupName:(NSString *)groupName typeName:(NSString *)typeName isTarget:(BOOL)isTarget {
@@ -140,26 +141,50 @@
     
     CGFloat x;
     CGFloat y;
-    CGFloat hitSize;
+    CGSize hitSize;
     if(isTarget == YES) {
-        hitSize = player.contentSize.width * 0.10;
-        x = (player.contentSize.width / 2.0f) - (hitSize / 2.0f);
+        hitSize = CGSizeMake(player.contentSize.width * 0.10, player.contentSize.height * 0.10);
+        x = (player.contentSize.width / 2.0f) - (hitSize.width / 2.0f);
         y = 0;
         player.opacity = 0.85;
     }
     else {
-        hitSize = player.contentSize.width;
-        x = (player.contentSize.width / 2.0f) - (hitSize / 2.0f);
-        y = (player.contentSize.height / 2.0f) - (hitSize / 2.0f);
+        hitSize = player.contentSize;
+        x = (player.contentSize.width / 2.0f) - (hitSize.width / 2.0f);
+        y = (player.contentSize.height / 2.0f) - (hitSize.height / 2.0f);
     }
     
-    player.physicsBody = [CCPhysicsBody bodyWithRect:(CGRect){ccp(x,y), CGSizeMake(hitSize, hitSize)} cornerRadius:0]; // 1
-    player.physicsBody.collisionGroup = groupName; // 2
+    player.physicsBody = [CCPhysicsBody bodyWithRect:(CGRect){ccp(x,y), hitSize} cornerRadius:0];
+    player.physicsBody.collisionGroup = groupName;
     player.physicsBody.collisionType  = typeName;
     player.physicsBody.allowsRotation = NO;
     
     [_physicsWorld addChild:player];
     return player;
+}
+
+#pragma mark - Sprite Layout
+
+- (NSMutableArray *)calculateHorizontalSpritePositions:(NSArray *)sprites y:(CGFloat)y {
+    
+    // calculate the width of the sprites
+    CGFloat spritesWidth = 0;
+    for(CCSprite *sprite in sprites) {
+        spritesWidth += sprite.contentSize.width;
+    }
+    
+    CGFloat spacing = (self.contentSize.width - spritesWidth) / (CGFloat)(sprites.count + 1);
+    
+    // calculate the sprite positions along a horizontal line
+    NSMutableArray *positions = [NSMutableArray new];
+    CGFloat x = spacing;
+    for(CCSprite *sprite in sprites) {
+        [positions addObject:[NSValue valueWithCGPoint:ccp(x + sprite.contentSize.width / 2.0f, y)]];
+        x += sprite.contentSize.width;
+        x += spacing;
+    }
+    
+    return positions;
 }
 
 #pragma mark - Moving Sprites
@@ -202,22 +227,19 @@
 - (void)touchBegan:(UITouch *)touch withEvent:(UIEvent *)event {
     CGPoint touchLocation = [touch locationInNode:self];
 
-    if (_playButton != nil && CGRectContainsPoint(_playButton.boundingBox, touchLocation)) {
-        [self playButtonClicked:self];
-        return;
+    for (CCSprite *sprite in _menuButtons) {
+        if (CGRectContainsPoint(sprite.boundingBox, touchLocation)) {
+            [self menuButtonClicked:[_menuButtons indexOfObject:sprite]];
+            return;
+        }
     }
 
-    if (CGRectContainsPoint(_source1.boundingBox, touchLocation)) {
-        _activeSprite = _source1;
-    }
-    else if (CGRectContainsPoint(_source2.boundingBox, touchLocation)) {
-        _activeSprite = _source2;
-    }
-    else if (CGRectContainsPoint(_source3.boundingBox, touchLocation)) {
-        _activeSprite = _source3;
-    }
-    else {
-        _activeSprite = nil;
+    _activeSprite = nil;
+
+    for (CCSprite *sprite in _sourceSprites) {
+        if (CGRectContainsPoint(sprite.boundingBox, touchLocation)) {
+            _activeSprite = sprite;
+        }
     }
 }
 
@@ -230,14 +252,12 @@
 #pragma mark - Handling Collisions
 
 - (BOOL)ccPhysicsCollisionBegin:(CCPhysicsCollisionPair *)pair sourceCollision:(CCNode *)source sinkCollision:(CCNode *)sink {
-    if((source == _source1 && sink == _target1) ||
-       (source == _source2 && sink == _target2) ||
-       (source == _source3 && sink == _target3)) {
-    return [self checkCollision:source sink:sink];
+    for (int index = 0; index<_sourceSprites.count; index++) {
+        if(source == _sourceSprites[index] && sink == _targetSprites[index]) {
+            return [self checkCollision:source sink:sink];
+        }
     }
-    else {
-        return NO;
-    }
+    return NO;
 }
 
 - (BOOL)checkCollision:(CCNode *)source sink:(CCNode *)sink {
@@ -247,7 +267,7 @@
     StarExplosion *explosion = [[StarExplosion node] initWithTotalParticles:50 point:sink.position];
     [self addChild:explosion];
     
-    CCAction *actionRemove = [CCActionFadeTo actionWithDuration:1.0f opacity:0.10];
+    CCAction *actionRemove = [CCActionFadeTo actionWithDuration:1.0f opacity:0.05];
     [sink runAction:[CCActionSequence actionWithArray:@[actionRemove]]];
     
     [self checkForWin];
@@ -256,8 +276,17 @@
 
 #pragma mark - Playing and Winning
 
--(void)checkForWin {
-    if(_source1.isRunningInActiveScene == NO && _source2.isRunningInActiveScene == NO && _source3.isRunningInActiveScene == NO) {
+- (void)checkForWin {
+    
+    BOOL anySourcesActive = NO;
+    for (CCSprite *sprite in _sourceSprites) {
+        if(sprite.isRunningInActiveScene == YES) {
+            anySourcesActive = YES;
+            break;
+        }
+    }
+    
+    if(anySourcesActive == NO) {
         [[OALSimpleAudio sharedInstance] playEffect:@"cheer.wav"];
         
         CCSprite *star = [CCSprite spriteWithImageNamed:@"mascot.png"];
@@ -271,31 +300,65 @@
         [star runAction:[CCActionSequence actionWithArray:@[actionFadeIn, actionFadeOut]]];
         CCAction *actionScale = [CCActionScaleTo actionWithDuration:2.5f scale:1.5f];
         [star runAction:actionScale];
-
-        _playButton = [CCSprite spriteWithImageNamed:@"button.png"];
-        _playButton.position = CGPointMake(self.contentSize.width / 2.0f, self.contentSize.height / 2.0f);
-        _playButton.opacity = 0.0f;
-        [self addChild:_playButton];
-        CCAction *actionFadeInPlay = [CCActionFadeTo actionWithDuration:0.25f opacity:1.0];
-        [_playButton runAction:[CCActionSequence actionWithArray:@[[CCActionDelay actionWithDuration:2.5f], actionFadeInPlay]]];
         
-        [_target1 removeFromParent];
-        [_target2 removeFromParent];
-        [_target3 removeFromParent];
+        for (CCSprite *target in _targetSprites) {
+            [target removeFromParent];
+        }
+        
+        [self showMenu:2.5f];
     }
 }
 
--(void)playButtonClicked:(id)sender {
+- (void)menuButtonClicked:(NSInteger)index {
     
-    [_playButton removeFromParent];
-    _playButton = nil;
-    
+    for (CCSprite *sprite in _menuButtons) {
+        [sprite removeFromParent];
+    }
+    _menuButtons = nil;
+
+    switch(index) {
+        case 0:
+            _shapeNames = [NSMutableArray arrayWithArray:@[@"circle", @"square", @"triangle"]];
+            break;
+        case 1:
+            _shapeNames = [NSMutableArray arrayWithArray:@[@"heart", @"hexagon", @"rectangle"]];
+            break;
+        case 2:
+            _shapeNames = [NSMutableArray arrayWithArray:@[@"octagon", @"diamond", @"cloud"]];
+            break;
+        case 3:
+            _shapeNames = [NSMutableArray arrayWithArray:@[@"moon", @"rounded", @"trapezoid"]];
+            break;
+    }
+
     [self addSources];
     [self addTargets];
     
-    [_source1 setZOrder:0];
-    [_source2 setZOrder:0];
-    [_source3 setZOrder:0];
+    for (CCSprite *source in _sourceSprites) {
+        [source setZOrder:0];
+    }
+}
+
+- (void)showMenu:(CGFloat)delay {
+    NSMutableArray *menuButtons = [NSMutableArray new];
+    for(int index = 1; index <= 4; index++) {
+        CCSprite *button = [CCSprite spriteWithImageNamed:[NSString stringWithFormat:@"menu_%d.png", index]];
+        button.position = CGPointMake(self.contentSize.width / 2.0f, self.contentSize.height / 2.0f);
+        button.opacity = 0.0f;
+        [self addChild:button];
+        CCAction *actionFadeInPlay = [CCActionFadeTo actionWithDuration:0.25f opacity:1.0];
+        [button runAction:[CCActionSequence actionWithArray:@[[CCActionDelay actionWithDuration:delay], actionFadeInPlay]]];
+        [menuButtons addObject:button];
+    }
+    
+    // assign a position to each menu button sprite
+    NSArray *positions = [self calculateHorizontalSpritePositions:menuButtons y:self.contentSize.height / 2.0f];
+    for(int index = 0; index < menuButtons.count; index++) {
+        CCSprite *sprite = menuButtons[index];
+        sprite.position = [positions[index] CGPointValue];
+    }
+    
+    _menuButtons = menuButtons;
 }
 
 @end

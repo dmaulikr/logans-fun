@@ -7,14 +7,11 @@
 
     CCSprite * background;
     CCSprite *_activeSprite;
-    CCSprite *_playButton;
 
-    CCSprite *_source1;
-    CCSprite *_target1;
-    CCSprite *_source2;
-    CCSprite *_target2;
-    CCSprite *_source3;
-    CCSprite *_target3;    
+    NSArray *_shapeNames;
+    NSArray *_sourceSprites;
+    NSArray *_targetSprites;
+    NSArray *_menuButtons;
 }
 
 @end
