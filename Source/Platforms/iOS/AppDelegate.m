@@ -5,18 +5,20 @@
 
 @implementation AppController
 
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
     NSMutableDictionary *cocos2dSetup = [NSMutableDictionary dictionary];
     
+    NSString *scale = @"-4x";
     [CCFileUtils sharedFileUtils].suffixesDict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                                  @"-4x", CCFileUtilsSuffixiPad,
-                                                  @"-4x", CCFileUtilsSuffixiPadHD,
-                                                  @"-3x", CCFileUtilsSuffixiPhone,
-                                                  @"-4x", CCFileUtilsSuffixiPhoneHD,
-                                                  @"-3x", CCFileUtilsSuffixiPhone5,
-                                                  @"-3x", CCFileUtilsSuffixiPhone5HD,
-                                                  @"", CCFileUtilsSuffixDefault,
+                                                  scale, CCFileUtilsSuffixiPad,
+                                                  scale, CCFileUtilsSuffixiPadHD,
+                                                  scale, CCFileUtilsSuffixiPhone,
+                                                  scale, CCFileUtilsSuffixiPhoneHD,
+                                                  scale, CCFileUtilsSuffixiPhone5,
+                                                  scale, CCFileUtilsSuffixiPhone5HD,
+                                                  scale, CCFileUtilsSuffixDefault,
                                                   nil];
     
     //[cocos2dSetup setObject:@(YES) forKey:CCSetupShowDebugStats];

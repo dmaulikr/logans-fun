@@ -5,6 +5,9 @@
 #import "CCTextureCache.h"
 #import "StarExplosion.h"
 #import "NSMutableArray+Shuffling.h"
+#import <sys/utsname.h> // import it in your header or implementation file.
+
+// 0,0 at bottom-left
 
 #if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>
@@ -18,19 +21,24 @@
 
 - (id)init {
     self = [super init];
-
-    self.userInteractionEnabled = YES;
-
-    // add some background colors
-    CCNodeColor *topBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.3f green:0.3f blue:0.3f alpha:1.0f]];
-    topBackground.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height / 2.0f);
-    topBackground.position = ccp(0, 0);
-    [self addChild:topBackground];
     
-    CCNodeColor *bottomBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.4f green:0.4f blue:0.4f alpha:1.0f]];
-    bottomBackground.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height / 2.0f);
-    bottomBackground.position = ccp(0, self.contentSize.height / 2.0f);
+    self.userInteractionEnabled = YES;
+    
+    CGFloat targetAreaHeight = self.contentSize.height / 2.0f;
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        targetAreaHeight = self.contentSize.height / 4.0f;
+    }
+    
+    // add some background colors
+    CCNodeColor *bottomBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.3f green:0.3f blue:0.3f alpha:1.0f]];
+    bottomBackground.contentSize = CGSizeMake(self.contentSize.width, targetAreaHeight);
+    bottomBackground.position = ccp(0, 0);
     [self addChild:bottomBackground];
+    
+    CCNodeColor *topBackground = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.4f green:0.4f blue:0.4f alpha:1.0f]];
+    topBackground.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height - targetAreaHeight);
+    topBackground.position = ccp(0, targetAreaHeight);
+    [self addChild:topBackground];
     
     // create our physics world
     _physicsWorld = [CCPhysicsNode node];
@@ -51,7 +59,7 @@
 #pragma mark - Sprite Creation
 
 - (void)addBorders {
-
+    
     CCSprite *left = [CCSprite spriteWithImageNamed:@"border.png"];
     left.position  = ccp(0,0);
     left.physicsBody = [CCPhysicsBody bodyWithRect:(CGRect){ccp(0,0), CGSizeMake(left.contentSize.width, self.contentSize.height)} cornerRadius:0];
@@ -85,7 +93,7 @@
     [_physicsWorld addChild:bottom];
 }
 
-- (void)addSources {
+- (void)addSources:(CGFloat)y reset:(BOOL)reset {
     
     // create the sprites for our current set of shapes
     NSMutableArray *sprites = [NSMutableArray new];
@@ -96,8 +104,7 @@
         [sprites addObject:[self addSprite:fileName groupName:groupName typeName:@"sourceCollision" isTarget:NO]];
         index += 1;
     }
-
-    CGFloat y = self.contentSize.height - ((self.contentSize.height/2.0f) / 2.0f);
+    
     NSMutableArray *positions = [self calculateHorizontalSpritePositions:sprites y:y];
     [positions shuffle];
     
@@ -107,7 +114,12 @@
         sprite.position = [positions[index] CGPointValue];
     }
     
-    _sourceSprites = sprites;
+    if(reset == YES) {
+        _sourceSprites = sprites;
+    }
+    else {
+        _sourceSprites = [sprites arrayByAddingObjectsFromArray:_sourceSprites];
+    }
 }
 
 - (void)addTargets {
@@ -123,6 +135,11 @@
     }
     
     CGFloat y = (self.contentSize.height/2.0f) / 2.0f;
+    
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        y = (self.contentSize.height / 4.0f) / 2.0f;
+    }
+    
     NSMutableArray *positions = [self calculateHorizontalSpritePositions:sprites y:y];
     [positions shuffle];
     
@@ -131,13 +148,49 @@
         CCSprite *sprite = sprites[index];
         sprite.position = [positions[index] CGPointValue];
     }
-
+    
     _targetSprites = sprites;
+}
+
+- (CGFloat)scaleForScreenSize {
+    CGFloat scale;
+    
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
+    CGFloat screenSize = MAX(screenRect.size.width, screenRect.size.height) * [[UIScreen mainScreen] scale];
+    if(screenSize > 0 && screenSize <= 1136) {
+        scale = 0.50; // iPhone 5/SE
+    }
+    else if(screenSize > 1136 && screenSize <= 1600) {
+        scale = 0.65; // medium phones
+    }
+    else if(screenSize > 1600 && screenSize <= 2048) {
+        scale = 0.75; // iPads
+    }
+    else {
+        scale = 1.0; // iPad Pro 13", iPhone Plus
+    }
+    
+    NSString *device = deviceName();
+    if([device isEqualToString:@"iPad3,3"] == YES) {
+        scale /= 2;
+    }
+
+    return scale;
+}
+
+NSString* deviceName()
+{
+    struct utsname systemInfo;
+    uname(&systemInfo);
+    
+    return [NSString stringWithCString:systemInfo.machine
+                              encoding:NSUTF8StringEncoding];
 }
 
 - (CCSprite *)addSprite:(NSString *)imageName groupName:(NSString *)groupName typeName:(NSString *)typeName isTarget:(BOOL)isTarget {
     CCSprite *player = [CCSprite spriteWithImageNamed:imageName];
     player.position  = ccp(self.contentSize.width/2,self.contentSize.height/2);
+    player.scale = [self scaleForScreenSize];
     
     CGFloat x;
     CGFloat y;
@@ -170,7 +223,7 @@
     // calculate the width of the sprites
     CGFloat spritesWidth = 0;
     for(CCSprite *sprite in sprites) {
-        spritesWidth += sprite.contentSize.width;
+        spritesWidth += (sprite.contentSize.width * sprite.scale);
     }
     
     CGFloat spacing = (self.contentSize.width - spritesWidth) / (CGFloat)(sprites.count + 1);
@@ -179,8 +232,8 @@
     NSMutableArray *positions = [NSMutableArray new];
     CGFloat x = spacing;
     for(CCSprite *sprite in sprites) {
-        [positions addObject:[NSValue valueWithCGPoint:ccp(x + sprite.contentSize.width / 2.0f, y)]];
-        x += sprite.contentSize.width;
+        [positions addObject:[NSValue valueWithCGPoint:ccp(x + (sprite.contentSize.width * sprite.scale) / 2.0f, y)]];
+        x += (sprite.contentSize.width * sprite.scale);
         x += spacing;
     }
     
@@ -226,16 +279,16 @@
 
 - (void)touchBegan:(UITouch *)touch withEvent:(UIEvent *)event {
     CGPoint touchLocation = [touch locationInNode:self];
-
+    
     for (CCSprite *sprite in _menuButtons) {
         if (CGRectContainsPoint(sprite.boundingBox, touchLocation)) {
             [self menuButtonClicked:[_menuButtons indexOfObject:sprite]];
             return;
         }
     }
-
+    
     _activeSprite = nil;
-
+    
     for (CCSprite *sprite in _sourceSprites) {
         if (CGRectContainsPoint(sprite.boundingBox, touchLocation)) {
             _activeSprite = sprite;
@@ -252,8 +305,8 @@
 #pragma mark - Handling Collisions
 
 - (BOOL)ccPhysicsCollisionBegin:(CCPhysicsCollisionPair *)pair sourceCollision:(CCNode *)source sinkCollision:(CCNode *)sink {
-    for (int index = 0; index<_sourceSprites.count; index++) {
-        if(source == _sourceSprites[index] && sink == _targetSprites[index]) {
+    for (int sourceIndex = 0; sourceIndex<_sourceSprites.count; sourceIndex++) {
+        if(source == _sourceSprites[sourceIndex] && sink == _targetSprites[sourceIndex % _targetSprites.count]) {
             return [self checkCollision:source sink:sink];
         }
     }
@@ -267,8 +320,8 @@
     StarExplosion *explosion = [[StarExplosion node] initWithTotalParticles:50 point:sink.position];
     [self addChild:explosion];
     
-    CCAction *actionRemove = [CCActionFadeTo actionWithDuration:1.0f opacity:0.05];
-    [sink runAction:[CCActionSequence actionWithArray:@[actionRemove]]];
+    //CCAction *actionRemove = [CCActionFadeTo actionWithDuration:1.0f opacity:0.05];
+    //[sink runAction:[CCActionSequence actionWithArray:@[actionRemove]]];
     
     [self checkForWin];
     return NO;
@@ -294,7 +347,7 @@
         star.opacity = 0;
         star.scale = 0;
         [self addChild:star];
-
+        
         CCAction *actionFadeIn = [CCActionFadeTo actionWithDuration:1.25f opacity:1.0];
         CCAction *actionFadeOut = [CCActionFadeTo actionWithDuration:1.25f opacity:0.0];
         [star runAction:[CCActionSequence actionWithArray:@[actionFadeIn, actionFadeOut]]];
@@ -315,7 +368,7 @@
         [sprite removeFromParent];
     }
     _menuButtons = nil;
-
+    
     switch(index) {
         case 0:
             _shapeNames = [NSMutableArray arrayWithArray:@[@"circle", @"square", @"triangle"]];
@@ -330,8 +383,31 @@
             _shapeNames = [NSMutableArray arrayWithArray:@[@"moon", @"rounded", @"trapezoid"]];
             break;
     }
-
-    [self addSources];
+    
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        
+        CGFloat targetAreaHeight = self.contentSize.height / 4.0f;
+        CGFloat y = targetAreaHeight + ((self.contentSize.height - targetAreaHeight) / 3.0f) * 2;
+        
+        [self addSources:y reset:YES];
+        
+        y = targetAreaHeight + ((self.contentSize.height - targetAreaHeight) / 3.0f) * 1;
+        [self addSources:y reset:NO];
+        
+        // randomly offset the source positions
+        int lowerBound = -100;
+        int upperBound = 100;
+        for (CCSprite *sprite in _sourceSprites) {
+            int xOffset = lowerBound + arc4random() % (upperBound - lowerBound);
+            int yOffset = lowerBound + arc4random() % (upperBound - lowerBound);
+            sprite.position = ccp(sprite.position.x + xOffset, sprite.position.y + yOffset);
+        }
+    }
+    else {
+        CGFloat y = self.contentSize.height - ((self.contentSize.height/2.0f) / 2.0f);
+        [self addSources:y reset:YES];
+    }
+    
     [self addTargets];
     
     for (CCSprite *source in _sourceSprites) {
@@ -343,6 +419,7 @@
     NSMutableArray *menuButtons = [NSMutableArray new];
     for(int index = 1; index <= 4; index++) {
         CCSprite *button = [CCSprite spriteWithImageNamed:[NSString stringWithFormat:@"menu_%d.png", index]];
+        button.scale = [self scaleForScreenSize];
         button.position = CGPointMake(self.contentSize.width / 2.0f, self.contentSize.height / 2.0f);
         button.opacity = 0.0f;
         [self addChild:button];
